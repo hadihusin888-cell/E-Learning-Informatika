@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Home, BookOpen, ClipboardList, CheckCircle, Settings,
   ArrowRight, FileText, Calendar, Bell, Star, Edit, Upload, 
@@ -27,6 +27,13 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, set
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fungsi untuk mengambil data notifikasi saja (untuk polling)
+  const fetchNotifications = useCallback(async () => {
+    const storedNotifs = await db.get(`elearning_notifs_${user.id}`);
+    setNotifications(Array.isArray(storedNotifs) ? storedNotifs : []);
+  }, [user.id]);
+
+  // Load awal semua data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -44,14 +51,20 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, set
       setLoading(false);
     };
     fetchData();
-  }, [activeView, user.id]);
+  }, [user.id]);
+
+  // Polling notifikasi setiap 10 detik agar icon lonceng terupdate otomatis
+  useEffect(() => {
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   const handleMarkAsRead = async (id: string) => {
     const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n);
     setNotifications(updated);
     await db.set(`elearning_notifs_${user.id}`, updated);
     
-    // Redirect based on type
+    // Aksi berdasarkan tipe notifikasi
     const notif = notifications.find(n => n.id === id);
     if (notif?.type === 'material') setActiveView('materials');
     if (notif?.type === 'task') setActiveView('tasks');
@@ -113,20 +126,37 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, set
   );
 };
 
-// Global Helper for URL Embedding
+/**
+ * Helper Cerdas untuk Mengubah URL biasa menjadi URL yang bisa disematkan (Embed)
+ */
 const getEmbedUrl = (url: string) => {
   if (!url) return "";
-  if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/');
-  if (url.includes('youtu.be/')) {
-    const id = url.split('/').pop();
-    return `https://www.youtube.com/embed/${id}`;
+  let embedUrl = url;
+
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    let videoId = "";
+    if (url.includes('v=')) {
+      videoId = url.split('v=')[1].split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0];
+    } else if (url.includes('embed/')) {
+      return url;
+    }
+    
+    if (videoId) {
+      embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autohide=1&showinfo=0`;
+    }
+  } 
+  else if (url.includes('drive.google.com/file/d/')) {
+    embedUrl = url.replace('/view', '/preview').replace('/edit', '/preview');
+  } 
+  else if (url.includes('canva.com/design/')) {
+    if (!url.includes('view?embed')) {
+      embedUrl = url.split('?')[0] + '/view?embed';
+    }
   }
-  if (url.includes('drive.google.com/file/d/')) return url.replace('/view', '/preview').replace('/edit', '/preview');
-  if (url.includes('canva.com/design/') && url.includes('/view')) {
-    if (url.includes('?')) return url.includes('embed') ? url : `${url}&embed`;
-    return `${url}?embed`;
-  }
-  return url;
+
+  return embedUrl;
 };
 
 // --- Home Tab ---
@@ -136,7 +166,7 @@ const StudentHomeTab: React.FC<{ user: User, materials: any[], tasks: any[], set
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {latestMaterial && (
-        <div className="bg-blue-50 border border-blue-100 p-5 rounded-[2rem] flex items-center gap-4 shadow-sm">
+        <div className="bg-blue-50 border border-blue-100 p-5 rounded-[2rem] flex items-center gap-4 shadow-sm text-black">
           <div className="w-12 h-12 bg-blue-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100 shrink-0">
             <Bell size={24} />
           </div>
@@ -166,7 +196,7 @@ const StudentHomeTab: React.FC<{ user: User, materials: any[], tasks: any[], set
             <h3 className="text-xl font-bold text-slate-800">Daftar Materi Terbaru</h3>
             <button onClick={() => setActiveView('materials')} className="text-emerald-600 text-xs font-black hover:underline uppercase tracking-widest">Lihat Semua</button>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4 text-black">
             {materials.slice(0, 3).map((item) => (
               <div key={item.id} onClick={() => setActiveView('materials')} className="bg-white p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between hover:shadow-xl hover:border-emerald-100 transition-all group cursor-pointer">
                  <div className="flex items-center gap-5">
@@ -181,7 +211,7 @@ const StudentHomeTab: React.FC<{ user: User, materials: any[], tasks: any[], set
             ))}
           </div>
         </div>
-        <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
+        <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between text-black">
           <h3 className="text-xl font-bold text-slate-800 mb-6">Status Belajar</h3>
           <div className="grid grid-cols-2 gap-4">
             <div onClick={() => setActiveView('materials')} className="p-6 bg-blue-50/50 rounded-[2rem] text-center cursor-pointer hover:bg-blue-50 transition-colors">
@@ -203,7 +233,7 @@ const StudentHomeTab: React.FC<{ user: User, materials: any[], tasks: any[], set
 const StudentMaterialsTab: React.FC<{ user: User, materials: any[] }> = ({ user, materials }) => {
   const [selectedMaterial, setSelectedMaterial] = useState<any | null>(null);
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 text-black">
       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
         <h3 className="text-2xl font-black text-slate-800">Materi Informatika</h3>
         <p className="text-sm text-slate-400 font-medium">Khusus Kelas <span className="text-emerald-600 font-black">{user.classId}</span></p>
@@ -226,7 +256,7 @@ const StudentMaterialsTab: React.FC<{ user: User, materials: any[] }> = ({ user,
         ))}
       </div>
       {selectedMaterial && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-0 md:p-10 animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-0 md:p-10 animate-in fade-in duration-300 text-black">
            <div className="bg-white w-full h-full max-w-6xl md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
               <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-white/50 backdrop-blur">
                  <div className="flex items-center gap-4">
@@ -241,8 +271,14 @@ const StudentMaterialsTab: React.FC<{ user: User, materials: any[] }> = ({ user,
                     <button onClick={() => setSelectedMaterial(null)} className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><X size={24} /></button>
                  </div>
               </div>
-              <div className="flex-1 bg-slate-100 relative">
-                 <iframe src={getEmbedUrl(selectedMaterial.content)} className="w-full h-full border-none" title={selectedMaterial.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>
+              <div className="flex-1 bg-black relative">
+                 <iframe 
+                    src={getEmbedUrl(selectedMaterial.content)} 
+                    className="w-full h-full border-none" 
+                    title={selectedMaterial.title} 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowFullScreen>
+                 </iframe>
               </div>
            </div>
         </div>
@@ -291,7 +327,7 @@ const StudentTasksTab: React.FC<{ user: User, tasks: any[], submissions: any[], 
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 text-black">
       <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
         <h3 className="text-2xl font-black text-slate-800">Tugas Informatika</h3>
         <p className="text-sm text-slate-400 font-medium">Kerjakan tugas tepat waktu sebelum batas akhir.</p>
@@ -321,13 +357,19 @@ const StudentTasksTab: React.FC<{ user: User, tasks: any[], submissions: any[], 
       </div>
 
       {showDetailModal && selectedTask && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[110] flex items-center justify-center p-0 md:p-6 lg:p-10 animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[110] flex items-center justify-center p-0 md:p-6 lg:p-10 animate-in fade-in duration-300 text-black">
            <div className="bg-white w-full h-full max-w-7xl md:rounded-[3rem] shadow-2xl flex flex-col lg:flex-row overflow-hidden animate-in zoom-in-95 duration-300">
-              <div className="flex-[3] bg-slate-100 relative border-r border-slate-100 min-h-[300px] lg:min-h-0">
+              <div className="flex-[3] bg-black relative border-r border-slate-100 min-h-[300px] lg:min-h-0">
                  <div className="absolute top-6 left-6 z-10">
                     <div className="bg-white/80 backdrop-blur px-4 py-2 rounded-2xl text-[10px] font-black text-slate-600 uppercase border border-white shadow-sm flex items-center gap-2"><Maximize2 size={12} /> Pratinjau Tugas</div>
                  </div>
-                 <iframe src={getEmbedUrl(selectedTask.content)} className="w-full h-full border-none" title={selectedTask.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>
+                 <iframe 
+                    src={getEmbedUrl(selectedTask.content)} 
+                    className="w-full h-full border-none" 
+                    title={selectedTask.title} 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowFullScreen>
+                 </iframe>
               </div>
 
               <div className="flex-[2] flex flex-col bg-white overflow-y-auto">
@@ -387,7 +429,7 @@ const StudentTasksTab: React.FC<{ user: User, tasks: any[], submissions: any[], 
 
 // --- Nilai Tab ---
 const StudentGradesTab: React.FC<{ tasks: any[], submissions: any[] }> = ({ tasks, submissions }) => (
-  <div className="space-y-8 animate-in fade-in duration-500">
+  <div className="space-y-8 animate-in fade-in duration-500 text-black">
     <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
       <h3 className="text-2xl font-black text-slate-800">Capaian Belajar</h3>
       <p className="text-sm text-slate-400 font-medium">Rekapitulasi hasil penilaian tugas Anda.</p>
@@ -488,7 +530,7 @@ const StudentSettingsTab: React.FC<{
       }
       
       alert("Profil berhasil diperbarui!");
-      setActiveView('home'); // Redirect ke dashboard awal
+      setActiveView('home'); 
     } catch (err) {
       alert("Gagal memperbarui profil. Periksa koneksi.");
     } finally {
@@ -502,7 +544,7 @@ const StudentSettingsTab: React.FC<{
   };
 
   return (
-    <div className="max-w-2xl bg-white p-10 md:p-14 rounded-[3.5rem] border border-slate-100 shadow-xl mx-auto animate-in slide-in-from-top-4 duration-500">
+    <div className="max-w-2xl bg-white p-10 md:p-14 rounded-[3.5rem] border border-slate-100 shadow-xl mx-auto animate-in slide-in-from-top-4 duration-500 text-black">
       <div className="text-center mb-12">
          <div className="relative inline-block group">
             <div className="w-36 h-36 rounded-full border-8 border-emerald-50 overflow-hidden bg-slate-50 shadow-inner">
@@ -580,7 +622,7 @@ const StudentSettingsTab: React.FC<{
                 placeholder="••••••••" 
                 value={password} 
                 onChange={e => setPassword(e.target.value)} 
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-black focus:ring-4 focus:ring-emerald-500/10 transition-all" 
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-black focus:ring-4 focus:ring-emerald-500/10 transition-all" 
              />
           </div>
           <p className="text-[9px] text-slate-400 mt-2">*Kosongkan jika tidak ingin mengganti password.</p>

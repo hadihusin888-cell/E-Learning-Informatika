@@ -1,17 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import LandingPage from './views/LandingPage';
-import AdminDashboard from './views/AdminDashboard';
-import StudentDashboard from './views/StudentDashboard';
-import Login from './views/Login';
-import Signup from './views/Signup';
-import { User, Role, SiteSettings, ClassRoom } from './types';
+import LandingPage from './views/LandingPage.tsx';
+import AdminDashboard from './views/AdminDashboard.tsx';
+import StudentDashboard from './views/StudentDashboard.tsx';
+import Login from './views/Login.tsx';
+import Signup from './views/Signup.tsx';
+import { User, Role, SiteSettings, ClassRoom } from './types.ts';
 import { Loader2 } from 'lucide-react';
 
-// URL Google Apps Script sebagai backend database
 export const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzuUN5UZEMH8RSYz6O8Ek-YLGQ4kyH4qmijkWjS_DBhjiOOvaENGs2nk9Znmx8qFTtaoA/exec"; 
 
-const isConfigured = GAS_API_URL && !GAS_API_URL.includes("XXXXXXXXXXXX");
+const isConfigured = !GAS_API_URL.includes("XXXXXXXXXXXX");
 
 export const db = {
   get: async (key: string) => {
@@ -19,23 +18,15 @@ export const db = {
     if (!isConfigured) return localData;
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // Timeout 8 detik
-      const response = await fetch(`${GAS_API_URL}?key=${key}`, { 
-        signal: controller.signal,
-        cache: 'no-store'
-      });
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const response = await fetch(`${GAS_API_URL}?key=${key}`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (!response.ok) throw new Error("Network response not ok");
       const cloudData = await response.json();
-      
-      // Update local storage jika data cloud tersedia
-      if (cloudData) {
-        localStorage.setItem(key, JSON.stringify(cloudData));
-        return cloudData;
-      }
-      return localData;
+      localStorage.setItem(key, JSON.stringify(cloudData));
+      return cloudData;
     } catch (err) {
-      console.warn(`[DB Get] Cloud sync failed for ${key}, using LocalStorage fallback.`);
+      console.warn(`Cloud Fetch Failed for ${key}, using LocalStorage.`, err);
       return localData;
     }
   },
@@ -43,15 +34,13 @@ export const db = {
     localStorage.setItem(key, JSON.stringify(value));
     if (!isConfigured) return;
     try {
-      // Menggunakan mode cors jika memungkinkan, atau keep-alive untuk reliabilitas
       fetch(GAS_API_URL, {
         method: "POST",
         mode: "no-cors", 
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, value })
-      }).catch(e => console.error("[DB Set] Cloud write failed:", e));
+      }).catch(e => console.error("Async Cloud Save Failed:", e));
     } catch (err) {
-      console.error("[DB Set] Sync Error:", err);
+      console.error("DB Set Sync Error:", err);
     }
   }
 };
@@ -71,16 +60,12 @@ const App: React.FC = () => {
     const initData = async () => {
       try {
         setIsLoading(true);
-        
-        // Memuat Pengaturan Situs
         const storedSettings = await db.get('elearning_site_settings');
-        if (storedSettings && !Array.isArray(storedSettings) && Object.keys(storedSettings).length > 0) {
+        if (storedSettings && !Array.isArray(storedSettings) && typeof storedSettings === 'object') {
           setSettings(storedSettings);
         } else {
           await db.set('elearning_site_settings', settings);
         }
-
-        // Inisialisasi Kelas Default jika kosong
         const classes = await db.get('elearning_classes_list');
         if (!classes || classes.length === 0) {
           const defaultClasses: ClassRoom[] = [
@@ -90,17 +75,13 @@ const App: React.FC = () => {
           ];
           await db.set('elearning_classes_list', defaultClasses);
         }
-
-        // Cek Sesi User
         const storedUser = localStorage.getItem('e_learning_user');
         if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          // Verifikasi ulang status user ke cloud jika perlu di sini
-          setUser(parsedUser);
+          setUser(JSON.parse(storedUser));
           setView('dashboard');
         }
       } catch (err) {
-        console.error("Critical Initialization Error:", err);
+        console.error("Initialization Failed:", err);
       } finally {
         setIsLoading(false);
       }
@@ -141,8 +122,7 @@ const App: React.FC = () => {
           <Loader2 className="w-16 h-16 text-emerald-600 animate-spin mb-4" />
           <div className="absolute inset-0 bg-emerald-500/10 rounded-full blur-xl animate-pulse"></div>
         </div>
-        <p className="text-slate-900 font-black tracking-tight animate-pulse text-xl">SMP AL IRSYAD SURAKARTA</p>
-        <p className="text-[10px] text-slate-400 mt-2 uppercase tracking-[0.2em] font-black">E-Learning Informatika</p>
+        <p className="text-slate-500 font-bold animate-pulse tracking-wide uppercase text-sm">SMP AL Irsyad Surakarta</p>
       </div>
     );
   }
@@ -152,17 +132,9 @@ const App: React.FC = () => {
       case 'landing':
         return <LandingPage onNavigateLogin={navigateToLogin} onNavigateSignup={navigateToSignup} settings={settings} />;
       case 'login':
-        return <Login 
-          role={loginRole || 'STUDENT'} 
-          onBack={() => setView('landing')} 
-          onLogin={handleLogin} 
-          onNavigateSignup={navigateToSignup}
-        />;
+        return <Login role={loginRole || 'STUDENT'} onBack={() => setView('landing')} onLogin={handleLogin} onNavigateSignup={navigateToSignup} />;
       case 'signup':
-        return <Signup onBack={() => setView('login')} onSignup={() => {
-          setLoginRole('STUDENT');
-          setView('login');
-        }} />;
+        return <Signup onBack={() => setView('login')} onSignup={() => { setLoginRole('STUDENT'); setView('login'); }} />;
       case 'dashboard':
         if (!user) return null;
         return user.role === 'ADMIN' 
@@ -173,11 +145,7 @@ const App: React.FC = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen selection:bg-emerald-600 selection:text-white">
-      {renderView()}
-    </div>
-  );
+  return <div className="min-h-screen selection:bg-emerald-100 selection:text-emerald-900">{renderView()}</div>;
 };
 
 export default App;
