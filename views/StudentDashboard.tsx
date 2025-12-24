@@ -131,8 +131,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, set
  */
 const getEmbedUrl = (url: string) => {
   if (!url) return "";
-  let embedUrl = url;
-
+  
+  // 1. YouTube Handling
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
     let videoId = "";
     if (url.includes('v=')) {
@@ -142,21 +142,26 @@ const getEmbedUrl = (url: string) => {
     } else if (url.includes('embed/')) {
       return url;
     }
-    
     if (videoId) {
-      embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autohide=1&showinfo=0`;
+      return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autohide=1&showinfo=0`;
     }
   } 
-  else if (url.includes('drive.google.com/file/d/')) {
-    embedUrl = url.replace('/view', '/preview').replace('/edit', '/preview');
+  
+  // 2. Google Drive Handling
+  if (url.includes('drive.google.com')) {
+    return url.replace('/view', '/preview').replace('/edit', '/preview');
   } 
-  else if (url.includes('canva.com/design/')) {
-    if (!url.includes('view?embed')) {
-      embedUrl = url.split('?')[0] + '/view?embed';
+  
+  // 3. Canva Handling - Improved Logic
+  if (url.includes('canva.com')) {
+    // Cari design ID menggunakan regex (misalnya DA... / ID acak canva)
+    const canvaMatch = url.match(/\/design\/([a-zA-Z0-9_-]+)/);
+    if (canvaMatch && canvaMatch[1]) {
+      return `https://www.canva.com/design/${canvaMatch[1]}/view?embed`;
     }
   }
 
-  return embedUrl;
+  return url;
 };
 
 // --- Home Tab ---
