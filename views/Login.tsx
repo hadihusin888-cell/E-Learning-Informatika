@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Mail, Lock, User as UserIcon, Info, Loader2 } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, User as UserIcon, Info, Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Role, User } from '../types';
 import { db } from '../App';
 
@@ -14,6 +14,7 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ role, onBack, onLogin, onNavigateSignup }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +28,6 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onLogin, onNavigateSignup }
         const adminList = await db.get('elearning_admins_list');
         const adminUsers = Array.isArray(adminList) ? adminList : [];
         
-        // Cari admin di database cloud
         const foundAdmin = adminUsers.find((a: any) => a.username.toLowerCase() === username.toLowerCase());
         
         if (foundAdmin) {
@@ -42,7 +42,6 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onLogin, onNavigateSignup }
           }
         }
 
-        // Fallback untuk admin default
         if (username === 'admin' && password === 'admin') {
           const adminUser: User = {
             id: 'admin_1',
@@ -151,14 +150,22 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onLogin, onNavigateSignup }
               <div className="relative">
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                 <input 
-                  type="password" 
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-black font-bold shadow-inner"
+                  className="w-full pl-14 pr-14 py-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-black font-bold shadow-inner"
                   required
                   disabled={loading}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors focus:outline-none"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
             </div>
 
@@ -202,9 +209,5 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onLogin, onNavigateSignup }
     </div>
   );
 };
-
-const AlertCircle = ({ size }: { size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-);
 
 export default Login;

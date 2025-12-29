@@ -6,7 +6,7 @@ import {
   ExternalLink, Check, Clock, AlertCircle, X, User as UserIcon, Lock,
   ChevronRight, CheckSquare, Maximize2, PlayCircle, Eye,
   Link as LinkIcon, MessageCircle, Info, Loader2, RefreshCw, Camera, Globe,
-  Save
+  Save, EyeOff
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { User, SiteSettings, Submission } from '../types';
@@ -27,13 +27,11 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, set
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fungsi untuk mengambil data notifikasi saja (untuk polling)
   const fetchNotifications = useCallback(async () => {
     const storedNotifs = await db.get(`elearning_notifs_${user.id}`);
     setNotifications(Array.isArray(storedNotifs) ? storedNotifs : []);
   }, [user.id]);
 
-  // Load awal semua data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -53,7 +51,6 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, set
     fetchData();
   }, [user.id]);
 
-  // Polling notifikasi setiap 10 detik agar icon lonceng terupdate otomatis
   useEffect(() => {
     const interval = setInterval(fetchNotifications, 10000);
     return () => clearInterval(interval);
@@ -64,7 +61,6 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, set
     setNotifications(updated);
     await db.set(`elearning_notifs_${user.id}`, updated);
     
-    // Aksi berdasarkan tipe notifikasi
     const notif = notifications.find(n => n.id === id);
     if (notif?.type === 'material') setActiveView('materials');
     if (notif?.type === 'task') setActiveView('tasks');
@@ -126,13 +122,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, set
   );
 };
 
-/**
- * Helper Cerdas untuk Mengubah URL biasa menjadi URL yang bisa disematkan (Embed)
- */
 const getEmbedUrl = (url: string) => {
   if (!url) return "";
-  
-  // 1. YouTube Handling
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
     let videoId = "";
     if (url.includes('v=')) {
@@ -146,21 +137,15 @@ const getEmbedUrl = (url: string) => {
       return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autohide=1&showinfo=0`;
     }
   } 
-  
-  // 2. Google Drive Handling
   if (url.includes('drive.google.com')) {
     return url.replace('/view', '/preview').replace('/edit', '/preview');
   } 
-  
-  // 3. Canva Handling - Improved Logic
   if (url.includes('canva.com')) {
-    // Cari design ID menggunakan regex (misalnya DA... / ID acak canva)
     const canvaMatch = url.match(/\/design\/([a-zA-Z0-9_-]+)/);
     if (canvaMatch && canvaMatch[1]) {
       return `https://www.canva.com/design/${canvaMatch[1]}/view?embed`;
     }
   }
-
   return url;
 };
 
@@ -499,6 +484,7 @@ const StudentSettingsTab: React.FC<{
   const [username, setUsername] = useState(user.username);
   const [avatar, setAvatar] = useState(user.avatar || '');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [updating, setUpdating] = useState(false);
 
   const handleUpdate = async () => {
@@ -536,6 +522,7 @@ const StudentSettingsTab: React.FC<{
       
       alert("Profil berhasil diperbarui!");
       setActiveView('home'); 
+      setShowPassword(false);
     } catch (err) {
       alert("Gagal memperbarui profil. Periksa koneksi.");
     } finally {
@@ -623,12 +610,20 @@ const StudentSettingsTab: React.FC<{
           <div className="relative">
              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
              <input 
-                type="password" 
+                type={showPassword ? 'text' : 'password'} 
                 placeholder="••••••••" 
                 value={password} 
                 onChange={e => setPassword(e.target.value)} 
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-black focus:ring-4 focus:ring-emerald-500/10 transition-all" 
+                className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-black focus:ring-4 focus:ring-emerald-500/10 transition-all" 
              />
+             <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors focus:outline-none"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
           </div>
           <p className="text-[9px] text-slate-400 mt-2">*Kosongkan jika tidak ingin mengganti password.</p>
         </div>

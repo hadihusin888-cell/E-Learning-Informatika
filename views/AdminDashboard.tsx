@@ -7,7 +7,7 @@ import {
   Loader2, ChevronRight, LayoutDashboard, Zap, Info, Star, MessageCircle, UserCog, 
   AlertTriangle, UserPlus, Check, Globe, Database, Cloud, Eye, User as UserIcon,
   Save, AlertCircle, Camera, Lock, RefreshCw, SortAsc, SortDesc, Filter, Trash,
-  FileText, PlayCircle, Youtube, FilterX
+  FileText, PlayCircle, Youtube, FilterX, EyeOff
 } from 'lucide-react';
 import Layout from '../components/Layout.tsx';
 import { User, SiteSettings, ClassRoom, Submission, Task, Material } from '../types.ts';
@@ -818,6 +818,7 @@ const ManageStudentsTab = ({ triggerConfirm, classes }: { triggerConfirm: any, c
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState<Partial<User>>({
     name: '',
     username: '',
@@ -862,6 +863,7 @@ const ManageStudentsTab = ({ triggerConfirm, classes }: { triggerConfirm: any, c
     setStudents(updated);
     setShowModal(false);
     setForm({ name: '', username: '', password: '', classId: '', status: 'ACTIVE' });
+    setShowPassword(false);
   };
 
   const handleDelete = (id: string, name: string) => {
@@ -946,7 +948,15 @@ const ManageStudentsTab = ({ triggerConfirm, classes }: { triggerConfirm: any, c
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">{form.id ? 'Password Baru (Kosongkan jika tetap)' : 'Password Awal'}</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                  <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="••••••••" className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold text-slate-800 focus:ring-4 focus:ring-blue-500/10 transition-all" />
+                  <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="••••••••" className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold text-slate-800 focus:ring-4 focus:ring-blue-500/10 transition-all" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors focus:outline-none"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </div>
             </div>
@@ -1039,12 +1049,11 @@ const ManageClassesTab = ({ triggerConfirm, classes, setClasses }: { triggerConf
 const SettingsTab: React.FC<{ settings: SiteSettings, setSettings: any, user: User, onUpdateUser: any }> = ({ settings, setSettings, user, onUpdateUser }) => {
   const [adminUsername, setAdminUsername] = useState(user.username);
   const [adminPassword, setAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSave = async () => {
-    // Simpan pengaturan situs
     await db.set('elearning_site_settings', settings);
     
-    // Simpan update akun admin
     const admins = await db.get('elearning_admins_list');
     const adminList = Array.isArray(admins) ? admins : [];
     
@@ -1069,11 +1078,11 @@ const SettingsTab: React.FC<{ settings: SiteSettings, setSettings: any, user: Us
     
     alert('Seluruh pengaturan berhasil disimpan!');
     setAdminPassword('');
+    setShowPassword(false);
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-black animate-in fade-in duration-500">
-      {/* Pengaturan Identitas Portal */}
       <div className="bg-white p-10 md:p-14 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-10">
         <div>
           <h3 className="text-2xl font-black text-slate-800">Identitas Portal</h3>
@@ -1100,7 +1109,6 @@ const SettingsTab: React.FC<{ settings: SiteSettings, setSettings: any, user: Us
         </div>
       </div>
 
-      {/* Pengaturan Akun Admin */}
       <div className="bg-white p-10 md:p-14 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-10">
         <div>
           <h3 className="text-2xl font-black text-slate-800">Akun Administrator</h3>
@@ -1118,7 +1126,15 @@ const SettingsTab: React.FC<{ settings: SiteSettings, setSettings: any, user: Us
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Password Admin Baru</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-              <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="Isi hanya jika ingin ganti..." className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold text-slate-800 focus:ring-4 focus:ring-blue-500/10 transition-all" />
+              <input type={showPassword ? 'text' : 'password'} value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="Isi hanya jika ingin ganti..." className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold text-slate-800 focus:ring-4 focus:ring-blue-500/10 transition-all" />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors focus:outline-none"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
             <p className="text-[9px] text-slate-400 mt-2 font-medium italic">*Kosongkan password jika tidak ingin mengubahnya.</p>
           </div>

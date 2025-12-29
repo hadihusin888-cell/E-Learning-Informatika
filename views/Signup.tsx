@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User as UserIcon, Lock, GraduationCap, Loader2 } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Lock, GraduationCap, Loader2, Eye, EyeOff } from 'lucide-react';
 import { User, ClassRoom } from '../types';
 import { db } from '../App';
 
@@ -14,6 +14,7 @@ const Signup: React.FC<SignupProps> = ({ onBack, onSignup }) => {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [classRoom, setClassRoom] = useState('');
   const [classes, setClasses] = useState<ClassRoom[]>([]);
   const [loading, setLoading] = useState(false);
@@ -95,7 +96,27 @@ const Signup: React.FC<SignupProps> = ({ onBack, onSignup }) => {
           ) : (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
               <div><label className="block text-sm font-semibold mb-2 text-slate-700">Username</label><input value={username} onChange={e => setUsername(e.target.value)} className="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 text-black font-bold" placeholder="Username" required /></div>
-              <div><label className="block text-sm font-semibold mb-2 text-slate-700">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 text-black font-bold" placeholder="Password" required /></div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-slate-700">Password</label>
+                <div className="relative">
+                  <input 
+                    type={showPassword ? 'text' : 'password'} 
+                    value={password} 
+                    onChange={e => setPassword(e.target.value)} 
+                    className="w-full p-4 pr-12 bg-slate-50 border rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 text-black font-bold" 
+                    placeholder="Password" 
+                    required 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors focus:outline-none"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
               <div className="flex gap-4"><button type="button" onClick={() => setStep(1)} className="flex-1 py-4 bg-slate-100 rounded-2xl font-black text-slate-600">Kembali</button><button type="submit" disabled={loading} className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-100">Daftar Akun</button></div>
             </div>
           )}
