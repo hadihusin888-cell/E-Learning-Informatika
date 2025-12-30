@@ -248,7 +248,7 @@ const StudentMaterialsTab: React.FC<{ user: User, materials: any[] }> = ({ user,
       {selectedMaterial && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-0 md:p-10 animate-in fade-in duration-300 text-black">
            <div className="bg-white w-full h-full max-w-6xl md:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-              <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-white/50 backdrop-blur">
+              <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-white/50 backdrop-blur sticky top-0 z-10">
                  <div className="flex items-center gap-4">
                     <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hidden sm:block"><BookOpen size={20} /></div>
                     <div>
@@ -261,14 +261,42 @@ const StudentMaterialsTab: React.FC<{ user: User, materials: any[] }> = ({ user,
                     <button onClick={() => setSelectedMaterial(null)} className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><X size={24} /></button>
                  </div>
               </div>
-              <div className="flex-1 bg-black relative">
-                 <iframe 
-                    src={getEmbedUrl(selectedMaterial.content)} 
-                    className="w-full h-full border-none" 
-                    title={selectedMaterial.title} 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowFullScreen>
-                 </iframe>
+              
+              <div className="flex-1 overflow-y-auto bg-slate-50 pb-20">
+                 <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8">
+                    {/* Frame Video */}
+                    <div className="bg-black rounded-[2rem] overflow-hidden shadow-2xl aspect-video w-full relative">
+                       <iframe 
+                          src={getEmbedUrl(selectedMaterial.content)} 
+                          className="w-full h-full border-none" 
+                          title={selectedMaterial.title} 
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                          allowFullScreen>
+                       </iframe>
+                    </div>
+
+                    {/* Deskripsi Materi */}
+                    <div className="bg-white p-8 md:p-12 rounded-[2.5rem] border border-slate-100 shadow-sm animate-in slide-in-from-bottom-4 duration-500">
+                       <div className="flex items-center gap-3 mb-6">
+                          <div className="w-1 h-8 bg-emerald-500 rounded-full"></div>
+                          <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight">Keterangan Materi</h4>
+                       </div>
+                       <p className="text-slate-600 font-medium leading-relaxed whitespace-pre-line text-base md:text-lg">
+                          {selectedMaterial.description || 'Tidak ada deskripsi tambahan untuk materi ini. Silakan simak video/konten di atas untuk mempelajari materi selengkapnya.'}
+                       </p>
+                       
+                       <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                          <div className="flex items-center gap-2">
+                             <Calendar size={14} />
+                             Dibuat pada: {new Date(selectedMaterial.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </div>
+                          <div className="flex items-center gap-2">
+                             <Info size={14} />
+                             Tipe: {selectedMaterial.type}
+                          </div>
+                       </div>
+                    </div>
+                 </div>
               </div>
            </div>
         </div>
@@ -608,7 +636,7 @@ const StudentSettingsTab: React.FC<{
         <div>
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Password Baru</label>
           <div className="relative">
-             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
              <input 
                 type={showPassword ? 'text' : 'password'} 
                 placeholder="••••••••" 
