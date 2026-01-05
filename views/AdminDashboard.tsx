@@ -1094,12 +1094,12 @@ const SettingsTab: React.FC<{ settings: SiteSettings, setSettings: any, user: Us
             <input value={settings.siteName} onChange={e => setSettings({...settings, siteName: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all text-slate-800" />
           </div>
           <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">URL Logo (PNG Transparan)</label>
-            <div className="flex gap-4">
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl border flex items-center justify-center shrink-0">
-                <img src={settings.logoUrl} className="w-10 h-10 object-contain" alt="Preview"/>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Logo Sekolah</label>
+            <div className="flex flex-col gap-4">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 flex items-center justify-center min-h-[120px]">
+                <img src={settings.logoUrl} className="max-h-24 w-auto object-contain" alt="Preview"/>
               </div>
-              <input value={settings.logoUrl} onChange={e => setSettings({...settings, logoUrl: e.target.value})} className="flex-1 p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none font-medium focus:ring-4 focus:ring-emerald-500/10 transition-all" />
+              <input value={settings.logoUrl} onChange={e => setSettings({...settings, logoUrl: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none font-medium focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="URL Logo (PNG Transparan)" />
             </div>
           </div>
           <div>

@@ -14,9 +14,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateLogin, onNavigateSi
     <div className="bg-slate-50 min-h-screen">
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 glass-effect h-20 px-6 lg:px-20 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src={settings.logoUrl} alt="Logo" className="w-10 h-10 rounded-lg" />
-          <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+        <div className="flex items-center gap-4">
+          <img src={settings.logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
+          <div className="hidden lg:block h-8 w-[1px] bg-slate-200 mx-2"></div>
+          <h1 className="hidden sm:block text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
             {settings.siteName}
           </h1>
         </div>
@@ -142,7 +143,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateLogin, onNavigateSi
       <footer className="py-12 px-6 bg-slate-900 text-slate-400">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
-            <img src={settings.logoUrl} alt="Logo" className="w-8 h-8 rounded-lg grayscale opacity-50" />
+            <img src={settings.logoUrl} alt="Logo" className="h-10 w-auto object-contain grayscale opacity-50" />
             <span className="text-lg font-bold text-white tracking-tight">{settings.siteName}</span>
           </div>
           <p className="text-sm">© 2026 SMP AL Irsyad Surakarta. All rights reserved.</p>

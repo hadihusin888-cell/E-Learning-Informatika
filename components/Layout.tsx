@@ -67,9 +67,9 @@ const Layout: React.FC<LayoutProps> = ({
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col sticky top-0 h-screen">
-        <div className="p-6 flex items-center gap-3">
-          <img src={logoUrl} alt="Logo" className="w-10 h-10 rounded-xl" />
-          <span className="font-bold text-slate-800 text-sm leading-tight">{siteName}</span>
+        <div className="p-6 flex flex-col gap-3">
+          <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain self-start rounded-lg" />
+          <span className="font-bold text-slate-800 text-xs leading-tight opacity-70 uppercase tracking-widest">{siteName}</span>
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-1">
@@ -104,9 +104,12 @@ const Layout: React.FC<LayoutProps> = ({
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Navbar */}
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40">
-          <h2 className="text-lg font-semibold text-slate-800 capitalize">
-            {sidebarItems.find(i => i.id === activeView)?.label || 'Dashboard'}
-          </h2>
+          <div className="flex items-center gap-4">
+            <img src={logoUrl} alt="Logo" className="h-8 w-auto object-contain md:hidden" />
+            <h2 className="text-lg font-semibold text-slate-800 capitalize">
+              {sidebarItems.find(i => i.id === activeView)?.label || 'Dashboard'}
+            </h2>
+          </div>
 
           <div className="flex items-center gap-4">
             {/* Notification Bell */}

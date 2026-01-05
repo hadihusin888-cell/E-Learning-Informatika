@@ -545,7 +545,8 @@ const StudentSettingsTab: React.FC<{
       if (onUpdateUser) {
         onUpdateUser(updatedUser);
       } else {
-        localStorage.setItem('e_learning_user', JSON.stringify(updatedUser));
+        // Fallback: Siswa menggunakan sessionStorage agar otomatis logout saat browser tutup
+        sessionStorage.setItem('e_learning_user', JSON.stringify(updatedUser));
       }
       
       alert("Profil berhasil diperbarui!");

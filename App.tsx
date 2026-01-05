@@ -66,6 +66,7 @@ const App: React.FC = () => {
         } else {
           await db.set('elearning_site_settings', settings);
         }
+        
         const classes = await db.get('elearning_classes_list');
         if (!classes || classes.length === 0) {
           const defaultClasses: ClassRoom[] = [
@@ -75,9 +76,14 @@ const App: React.FC = () => {
           ];
           await db.set('elearning_classes_list', defaultClasses);
         }
-        const storedUser = localStorage.getItem('e_learning_user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+
+        // Cek sesi: Siswa di sessionStorage, Admin di localStorage
+        const sessionUser = sessionStorage.getItem('e_learning_user');
+        const persistentUser = localStorage.getItem('e_learning_user');
+        const storedUserRaw = sessionUser || persistentUser;
+
+        if (storedUserRaw) {
+          setUser(JSON.parse(storedUserRaw));
           setView('dashboard');
         }
       } catch (err) {
@@ -91,18 +97,31 @@ const App: React.FC = () => {
 
   const handleLogin = (u: User) => {
     setUser(u);
-    localStorage.setItem('e_learning_user', JSON.stringify(u));
+    if (u.role === 'STUDENT') {
+      // Siswa: Gunakan sessionStorage agar logout saat browser ditutup
+      sessionStorage.setItem('e_learning_user', JSON.stringify(u));
+      localStorage.removeItem('e_learning_user'); // Pastikan tidak tertinggal di persistent storage
+    } else {
+      // Admin: Gunakan localStorage agar tetap login
+      localStorage.setItem('e_learning_user', JSON.stringify(u));
+      sessionStorage.removeItem('e_learning_user');
+    }
     setView('dashboard');
   };
 
   const handleUpdateUser = (updatedUser: User) => {
     setUser(updatedUser);
-    localStorage.setItem('e_learning_user', JSON.stringify(updatedUser));
+    if (updatedUser.role === 'STUDENT') {
+      sessionStorage.setItem('e_learning_user', JSON.stringify(updatedUser));
+    } else {
+      localStorage.setItem('e_learning_user', JSON.stringify(updatedUser));
+    }
   };
 
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('e_learning_user');
+    sessionStorage.removeItem('e_learning_user');
     setView('landing');
   };
 
