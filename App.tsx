@@ -8,7 +8,7 @@ import Signup from './views/Signup.tsx';
 import { User, Role, SiteSettings, ClassRoom } from './types.ts';
 import { Loader2 } from 'lucide-react';
 
-export const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzuUN5UZEMH8RSYz6O8Ek-YLGQ4kyH4qmijkWjS_DBhjiOOvaENGs2nk9Znmx8qFTtaoA/exec"; 
+export const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwb1wNjHVDYFq-xSpsg_jzMFIciwAlX4ZGHU5pdyjZvO-MfviwMCwfPz_Xe6xZABqv9Yg/exec"; 
 
 const isConfigured = !GAS_API_URL.includes("XXXXXXXXXXXX");
 
