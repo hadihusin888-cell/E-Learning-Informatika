@@ -4,7 +4,8 @@ import {
   Globe, LayoutDashboard, Link as LinkIcon, Image as ImageIcon, 
   Shield, UserCog, Key, User as UserIcon, EyeOff, Eye, 
   Loader2, Save, Cloud, Palette, Monitor, Camera, 
-  CheckCircle2, Info, ArrowRight, Sparkles
+  CheckCircle2, Info, ArrowRight, Sparkles, Database,
+  TableProperties
 } from 'lucide-react';
 import { db } from '../../App.tsx';
 import { SiteSettings, User } from '../../types.ts';
@@ -22,6 +23,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, setSettings, user, 
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDbGuide, setShowDbGuide] = useState(false);
 
   const handleSave = async () => {
     if (!settings.siteName || !adminName || !adminUsername) {
@@ -31,10 +33,15 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, setSettings, user, 
 
     setIsSaving(true);
     try {
-      // Save Site Settings
-      await db.saveAll('elearning_site_settings', settings);
+      // 1. Save Site Settings (Visual & Identitas)
+      // Objek settings dikirim langsung sesuai struktur kolom: logoUrl, heroImageUrl, siteName
+      await db.saveAll('elearning_site_settings', {
+        logoUrl: settings.logoUrl,
+        heroImageUrl: settings.heroImageUrl,
+        siteName: settings.siteName
+      });
       
-      // Save Admin Account Details
+      // 2. Save Admin Account Details
       const admins = await db.get('elearning_admins_list');
       const adminList = Array.isArray(admins) ? admins : [];
       
@@ -42,14 +49,13 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, setSettings, user, 
         ...user, 
         name: adminName, 
         username: adminUsername, 
-        // Menggunakan field 'password' untuk aplikasi dan 'password_admin' untuk database sheet
         password: adminPassword || user.password,
         password_admin: adminPassword || user.password,
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${adminUsername}`
       };
       
-      const updatedList = adminList.map((a: User) => a.id === user.id ? updatedUser : a);
-      if (!adminList.find((a: User) => a.id === user.id)) {
+      const updatedList = adminList.map((a: any) => a.id === user.id ? updatedUser : a);
+      if (!adminList.find((a: any) => a.id === user.id)) {
         updatedList.push(updatedUser);
       }
       
@@ -57,10 +63,10 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, setSettings, user, 
       
       if (onUpdateUser) onUpdateUser(updatedUser);
       
-      alert('Konfigurasi Sistem Berhasil Diperbarui!');
+      alert('Konfigurasi Berhasil Disimpan ke Database Cloud!');
     } catch (err) {
       console.error(err);
-      alert('Gagal menyimpan pengaturan. Periksa koneksi Anda.');
+      alert('Gagal sinkronisasi data. Pastikan Apps Script aktif.');
     } finally {
       setIsSaving(false);
     }
@@ -68,6 +74,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, setSettings, user, 
 
   return (
     <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 text-black pb-32 px-4">
+      {/* Header & Save Action */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-3">
@@ -79,15 +86,60 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, setSettings, user, 
           <p className="text-slate-500 font-medium text-lg mt-2">Personalisasi identitas visual dan keamanan akun administrator.</p>
         </div>
         
-        <button 
-          onClick={handleSave} 
-          disabled={isSaving}
-          className="group px-8 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-lg hover:bg-emerald-600 transition-all flex items-center justify-center gap-4 shadow-2xl shadow-slate-200 active:scale-95 disabled:opacity-50"
-        >
-          {isSaving ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}
-          {isSaving ? 'Menyimpan...' : 'Simpan Semua Perubahan'}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button 
+            onClick={() => setShowDbGuide(!showDbGuide)}
+            className="px-6 py-5 bg-white border border-slate-200 text-slate-600 rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-3"
+          >
+            <Database size={18} /> {showDbGuide ? 'Tutup Panduan' : 'Struktur Database'}
+          </button>
+          <button 
+            onClick={handleSave} 
+            disabled={isSaving}
+            className="group px-8 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-lg hover:bg-emerald-600 transition-all flex items-center justify-center gap-4 shadow-2xl shadow-slate-200 active:scale-95 disabled:opacity-50"
+          >
+            {isSaving ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}
+            {isSaving ? 'Menyimpan...' : 'Simpan Semua'}
+          </button>
+        </div>
       </div>
+
+      {/* Database Column Guide Section */}
+      {showDbGuide && (
+        <div className="bg-amber-50 border-2 border-amber-100 p-8 rounded-[3rem] animate-in zoom-in-95 duration-300">
+           <div className="flex items-center gap-3 mb-6">
+              <TableProperties className="text-amber-600" />
+              <h4 className="text-lg font-black text-amber-900 uppercase tracking-tight">Panduan Kolom Google Sheets</h4>
+           </div>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                 <p className="text-xs font-bold text-amber-800 uppercase tracking-widest">1. Sheet: elearning_site_settings</p>
+                 <div className="bg-white p-4 rounded-2xl border border-amber-200 overflow-x-auto">
+                    <table className="w-full text-[10px] font-mono">
+                       <thead>
+                          <tr className="border-b border-slate-100">
+                             <th className="p-2 text-emerald-600">logoUrl</th>
+                             <th className="p-2 text-emerald-600">heroImageUrl</th>
+                             <th className="p-2 text-emerald-600">siteName</th>
+                          </tr>
+                       </thead>
+                       <tbody>
+                          <tr>
+                             <td className="p-2 text-slate-400 italic">https://...</td>
+                             <td className="p-2 text-slate-400 italic">https://...</td>
+                             <td className="p-2 text-slate-400 italic">Informatika SMP...</td>
+                          </tr>
+                       </tbody>
+                    </table>
+                 </div>
+              </div>
+              <div className="space-y-4">
+                 <p className="text-xs font-bold text-amber-800 uppercase tracking-widest">2. Sheet: elearning_admins_list</p>
+                 <p className="text-[10px] text-amber-700 leading-relaxed">Pastikan baris pertama berisi kolom: <b>id, username, name, password_admin, role, avatar</b>. Sistem akan mengupdate baris berdasarkan ID login Anda.</p>
+              </div>
+           </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-7 space-y-10">
@@ -161,7 +213,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, setSettings, user, 
                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Pratinjau Gambar Utama</p>
                       </div>
                     )}
-                    <div className="absolute top-4 left-4 px-3 py-1 bg-black/50 backdrop-blur-md text-white text-[9px] font-black uppercase rounded-full">Preview Mode</div>
                   </div>
                 </div>
               </div>
@@ -170,7 +221,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, setSettings, user, 
         </div>
 
         <div className="lg:col-span-5 space-y-10">
-          <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm relative overflow-hidden h-fit">
+          <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden h-fit">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -mr-16 -mt-16"></div>
 
             <div className="flex items-center gap-5 mb-10 relative z-10">
@@ -240,29 +291,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({ settings, setSettings, user, 
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium italic ml-1 leading-relaxed">Kosongkan jika tidak ingin mengubah password saat ini.</p>
-              </div>
-
-              <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 flex items-start gap-4 shadow-inner">
-                <Info size={18} className="text-blue-500 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-blue-600 font-bold leading-relaxed">
-                  Perubahan username atau password akan memaksa sesi login di perangkat lain untuk diperbarui pada sesi berikutnya. Aplikasi akan menyinkronkan data ke kolom 'password_admin' di database.
-                </p>
               </div>
             </div>
-          </div>
-
-          <div className="bg-slate-900 p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                <Cloud size={20} className="text-emerald-400" />
-              </div>
-              <span className="text-xs font-black uppercase tracking-widest">Cloud Sync Active</span>
-            </div>
-            <p className="text-sm opacity-60 font-medium leading-relaxed">
-              Semua pengaturan akan langsung disinkronkan ke database cloud dan akan diterapkan ke seluruh portal siswa secara realtime.
-            </p>
           </div>
         </div>
       </div>

@@ -72,9 +72,9 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [settings, setSettings] = useState<SiteSettings>({
-    logoUrl: 'https://cdn-icons-png.flaticon.com/512/2942/2942789.png',
-    heroImageUrl: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop',
-    siteName: 'Informatika SMP AL Irsyad Surakarta'
+    logoUrl: 'https://www.alirsyad.or.id/wp-content/uploads/download/alirsyad-alislamiyyah.png',
+    heroImageUrl: 'https://cdn.fpt-is.com/vi/he-thong-elearning-1.png',
+    siteName: 'Informatika SMP Al Irsyad Surakarta'
   });
 
   useEffect(() => {
@@ -105,7 +105,10 @@ const App: React.FC = () => {
         setIsLoading(true);
         const storedSettings = await db.get('elearning_site_settings');
         if (storedSettings && !Array.isArray(storedSettings) && typeof storedSettings === 'object') {
-          setSettings(storedSettings);
+          // Hanya update jika data dari DB memiliki properti yang diperlukan
+          if (storedSettings.siteName) {
+            setSettings(storedSettings);
+          }
         }
         
         const classes = await db.get('elearning_classes_list');
