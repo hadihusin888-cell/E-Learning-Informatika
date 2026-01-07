@@ -1,6 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut, User as UserIcon, Bell, X, Check, Info, BookOpen, ClipboardList, CheckCircle, UserPlus } from 'lucide-react';
+import { 
+  LogOut, User as UserIcon, Bell, X, Check, 
+  Info, BookOpen, ClipboardList, CheckCircle, 
+  UserPlus, ChevronDown, Settings, UserCircle 
+} from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -39,14 +43,20 @@ const Layout: React.FC<LayoutProps> = ({
   onMarkAllAsRead
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const unreadCount = notifications.filter(n => !n.read).length;
+  
   const notificationRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
-  // Close notifications when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -89,24 +99,24 @@ const Layout: React.FC<LayoutProps> = ({
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
-          <button
-            onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all"
-          >
-            <LogOut size={18} />
-            Keluar
-          </button>
+        <div className="p-4 border-t border-slate-50">
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status Belajar</p>
+             <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-bold text-slate-700">Aktif & Terhubung</span>
+             </div>
+          </div>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Navbar */}
-        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40">
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-4">
             <img src={logoUrl} alt="Logo" className="h-8 w-auto object-contain md:hidden" />
-            <h2 className="text-lg font-semibold text-slate-800 capitalize">
+            <h2 className="text-lg font-black text-slate-800 capitalize tracking-tight">
               {sidebarItems.find(i => i.id === activeView)?.label || 'Dashboard'}
             </h2>
           </div>
@@ -116,11 +126,11 @@ const Layout: React.FC<LayoutProps> = ({
             <div className="relative" ref={notificationRef}>
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
-                className={`p-2 rounded-xl transition-all relative ${showNotifications ? 'bg-emerald-50 text-emerald-600' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                className={`p-3 rounded-2xl transition-all relative ${showNotifications ? 'bg-emerald-50 text-emerald-600' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'}`}
               >
                 <Bell size={22} />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white animate-bounce">
+                  <span className="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white animate-bounce">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -128,7 +138,7 @@ const Layout: React.FC<LayoutProps> = ({
 
               {/* Notification Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 md:w-96 bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="absolute right-0 mt-3 w-80 md:w-96 bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
                   <div className="p-6 border-b border-slate-50 flex items-center justify-between">
                     <h4 className="font-black text-slate-800">Notifikasi Terbaru</h4>
                     {unreadCount > 0 && (
@@ -170,17 +180,76 @@ const Layout: React.FC<LayoutProps> = ({
               )}
             </div>
 
-            <div className="h-8 w-[1px] bg-slate-200 mx-2"></div>
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-slate-800 leading-none">{user.name}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider">{user.role}</p>
-              </div>
-              <img 
-                src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
-                alt="Profile" 
-                className="w-10 h-10 rounded-full border-2 border-emerald-100 bg-white"
-              />
+            <div className="h-10 w-[1.5px] bg-slate-100 mx-2"></div>
+
+            {/* Profile Dropdown Trigger */}
+            <div className="relative" ref={profileRef}>
+              <button 
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className={`flex items-center gap-3 p-1.5 pr-4 rounded-full transition-all border ${
+                  showProfileMenu 
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-lg' 
+                    : 'bg-slate-50 border-slate-100 text-slate-700 hover:border-slate-200'
+                }`}
+              >
+                <img 
+                  src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
+                  alt="Profile" 
+                  className={`w-9 h-9 rounded-full border-2 ${showProfileMenu ? 'border-white/20' : 'border-white'} bg-white object-cover`}
+                />
+                <div className="text-left hidden sm:block">
+                  <p className={`text-xs font-black leading-none ${showProfileMenu ? 'text-white' : 'text-slate-800'}`}>
+                    {user.name.split(' ')[0]}
+                  </p>
+                </div>
+                <ChevronDown size={14} className={`transition-transform duration-300 ${showProfileMenu ? 'rotate-180 text-emerald-400' : 'text-slate-400'}`} />
+              </button>
+
+              {/* Profile Dropdown Menu */}
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-3 w-64 bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                  <div className="p-6 bg-slate-50 border-b border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Akun Terhubung</p>
+                    <div className="flex items-center gap-4">
+                       <img 
+                        src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} 
+                        className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
+                        alt=""
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-slate-800 truncate">{user.name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">@{user.username}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-2 space-y-1">
+                    <button 
+                      onClick={() => { setActiveView('settings'); setShowProfileMenu(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      <Settings size={18} className="text-slate-400" /> Pengaturan Profil
+                    </button>
+                    {user.role === 'STUDENT' && (
+                      <button 
+                        onClick={() => { setActiveView('grades'); setShowProfileMenu(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        <CheckCircle size={18} className="text-slate-400" /> Lihat Pencapaian
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="p-2 border-t border-slate-50">
+                    <button 
+                      onClick={onLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-black text-rose-500 hover:bg-rose-50 transition-colors"
+                    >
+                      <LogOut size={18} /> Keluar Aplikasi
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -202,15 +271,18 @@ const Layout: React.FC<LayoutProps> = ({
             }`}
           >
             <item.icon size={20} />
-            <span className="text-[10px] font-medium">{item.label.split(' ')[0]}</span>
+            <span className="text-[10px] font-bold">{item.label.split(' ')[0]}</span>
           </button>
         ))}
+        {/* Mobile profile quick access instead of logout */}
         <button
-          onClick={onLogout}
-          className="flex flex-col items-center gap-1 p-2 text-red-400"
+          onClick={() => setActiveView('settings')}
+          className={`flex flex-col items-center gap-1 p-2 rounded-lg ${
+            activeView === 'settings' ? 'text-emerald-600' : 'text-slate-400'
+          }`}
         >
-          <LogOut size={20} />
-          <span className="text-[10px] font-medium">Keluar</span>
+          <UserIcon size={20} />
+          <span className="text-[10px] font-bold">Profil</span>
         </button>
       </nav>
     </div>

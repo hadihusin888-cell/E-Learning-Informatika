@@ -31,22 +31,30 @@ const Signup: React.FC<SignupProps> = ({ onBack, onSignup }) => {
     e.preventDefault();
     setLoading(true);
 
+    const cleanUsername = username.trim().toLowerCase();
+    const cleanName = name.trim();
+
     const newPendingStudent: User = {
       id: `pending_${Math.random().toString(36).substr(2, 9)}`,
-      name,
-      username,
-      password,
+      name: cleanName,
+      username: cleanUsername,
+      password: password, // Password biarkan case-sensitive
       classId: classRoom,
       role: 'STUDENT',
       status: 'PENDING',
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanUsername}`
     };
 
     try {
       const existingPending = await db.get('elearning_pending_students');
       const existingActive = await db.get('elearning_students_list');
       
-      const isTaken = [...(Array.isArray(existingPending) ? existingPending : []), ...(Array.isArray(existingActive) ? existingActive : [])].some((u: User) => u.username === username);
+      const pList = Array.isArray(existingPending) ? existingPending : [];
+      const aList = Array.isArray(existingActive) ? existingActive : [];
+
+      const isTaken = [...pList, ...aList].some((u: User) => 
+        u?.username?.toLowerCase() === cleanUsername
+      );
 
       if (isTaken) {
         alert("Username sudah digunakan. Silakan pilih username lain.");
@@ -54,9 +62,9 @@ const Signup: React.FC<SignupProps> = ({ onBack, onSignup }) => {
         return;
       }
 
-      await db.set('elearning_pending_students', [...(Array.isArray(existingPending) ? existingPending : []), newPendingStudent]);
+      await db.saveAll('elearning_pending_students', [...pList, newPendingStudent]);
       
-      alert("Pendaftaran berhasil! Tunggu konfirmasi Admin.");
+      alert("Pendaftaran berhasil! Tunggu konfirmasi Admin/Guru untuk dapat login.");
       onSignup();
     } catch (err) {
       alert("Gagal menghubungi server. Periksa koneksi internet.");

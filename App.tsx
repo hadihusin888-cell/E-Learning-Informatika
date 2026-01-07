@@ -6,9 +6,10 @@ import StudentDashboard from './views/StudentDashboard.tsx';
 import Login from './views/Login.tsx';
 import Signup from './views/Signup.tsx';
 import { User, Role, SiteSettings, ClassRoom } from './types.ts';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 
-export const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwb1wNjHVDYFq-xSpsg_jzMFIciwAlX4ZGHU5pdyjZvO-MfviwMCwfPz_Xe6xZABqv9Yg/exec"; 
+// GANTI URL INI DENGAN URL DEPLOY BARU ANDA
+export const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyWHzmyMRZfUJdFZB0cKA-z-gXqeZOb2djiwbTpyUIky6WRJ_r_24WVBK2pZ4rFRM4Izw/exec"; 
 
 const isConfigured = !GAS_API_URL.includes("XXXXXXXXXXXX");
 
@@ -17,30 +18,49 @@ export const db = {
     const localData = JSON.parse(localStorage.getItem(key) || "[]");
     if (!isConfigured) return localData;
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-      const response = await fetch(`${GAS_API_URL}?key=${key}`, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error("Network response not ok");
+      // Tambahkan timestamp untuk menghindari cache browser yang sering terjadi pada Apps Script
+      const timestamp = new Date().getTime();
+      const response = await fetch(`${GAS_API_URL}?key=${key}&_=${timestamp}`);
+      if (!response.ok) throw new Error("Fetch failed");
       const cloudData = await response.json();
       localStorage.setItem(key, JSON.stringify(cloudData));
       return cloudData;
     } catch (err) {
-      console.warn(`Cloud Fetch Failed for ${key}, using LocalStorage.`, err);
+      console.warn(`Gagal mengambil data ${key} dari cloud, menggunakan data lokal.`);
       return localData;
     }
   },
-  set: async (key: string, value: any) => {
+  
+  saveAll: async (key: string, value: any) => {
     localStorage.setItem(key, JSON.stringify(value));
     if (!isConfigured) return;
+    
+    window.dispatchEvent(new CustomEvent('sync-start'));
     try {
-      fetch(GAS_API_URL, {
+      await fetch(GAS_API_URL, {
         method: "POST",
-        mode: "no-cors", 
-        body: JSON.stringify({ key, value })
-      }).catch(e => console.error("Async Cloud Save Failed:", e));
+        body: JSON.stringify({ action: 'SAVE_ALL', key, value })
+      });
+      window.dispatchEvent(new CustomEvent('sync-end'));
     } catch (err) {
-      console.error("DB Set Sync Error:", err);
+      window.dispatchEvent(new CustomEvent('sync-error'));
+    }
+  },
+
+  append: async (key: string, value: any) => {
+    const current = JSON.parse(localStorage.getItem(key) || "[]");
+    localStorage.setItem(key, JSON.stringify([value, ...current]));
+    
+    if (!isConfigured) return;
+    window.dispatchEvent(new CustomEvent('sync-start'));
+    try {
+      await fetch(GAS_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: 'APPEND_ROW', key, value })
+      });
+      window.dispatchEvent(new CustomEvent('sync-end'));
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('sync-error'));
     }
   }
 };
@@ -50,11 +70,34 @@ const App: React.FC = () => {
   const [view, setView] = useState<'landing' | 'login' | 'signup' | 'dashboard'>('landing');
   const [loginRole, setLoginRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [settings, setSettings] = useState<SiteSettings>({
     logoUrl: 'https://cdn-icons-png.flaticon.com/512/2942/2942789.png',
     heroImageUrl: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop',
     siteName: 'Informatika SMP AL Irsyad Surakarta'
   });
+
+  useEffect(() => {
+    const handleSyncStart = () => setSyncStatus('syncing');
+    const handleSyncEnd = () => {
+      setSyncStatus('success');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    };
+    const handleSyncError = () => {
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 5000);
+    };
+
+    window.addEventListener('sync-start', handleSyncStart);
+    window.addEventListener('sync-end', handleSyncEnd);
+    window.addEventListener('sync-error', handleSyncError);
+
+    return () => {
+      window.removeEventListener('sync-start', handleSyncStart);
+      window.removeEventListener('sync-end', handleSyncEnd);
+      window.removeEventListener('sync-error', handleSyncError);
+    };
+  }, []);
 
   useEffect(() => {
     const initData = async () => {
@@ -63,21 +106,18 @@ const App: React.FC = () => {
         const storedSettings = await db.get('elearning_site_settings');
         if (storedSettings && !Array.isArray(storedSettings) && typeof storedSettings === 'object') {
           setSettings(storedSettings);
-        } else {
-          await db.set('elearning_site_settings', settings);
         }
         
         const classes = await db.get('elearning_classes_list');
-        if (!classes || classes.length === 0) {
+        if (!classes || (Array.isArray(classes) && classes.length === 0)) {
           const defaultClasses: ClassRoom[] = [
             { id: 'c1', name: '7A', homeroomTeacher: 'Bpk. Irsyad Maulana, S.Kom' },
             { id: 'c2', name: '7B', homeroomTeacher: 'Ibu Siti Aminah, M.Pd' },
             { id: 'c3', name: '8A', homeroomTeacher: 'Bpk. Budi Setiawan, S.T' }
           ];
-          await db.set('elearning_classes_list', defaultClasses);
+          await db.saveAll('elearning_classes_list', defaultClasses);
         }
 
-        // Cek sesi: Siswa di sessionStorage, Admin di localStorage
         const sessionUser = sessionStorage.getItem('e_learning_user');
         const persistentUser = localStorage.getItem('e_learning_user');
         const storedUserRaw = sessionUser || persistentUser;
@@ -98,11 +138,9 @@ const App: React.FC = () => {
   const handleLogin = (u: User) => {
     setUser(u);
     if (u.role === 'STUDENT') {
-      // Siswa: Gunakan sessionStorage agar logout saat browser ditutup
       sessionStorage.setItem('e_learning_user', JSON.stringify(u));
-      localStorage.removeItem('e_learning_user'); // Pastikan tidak tertinggal di persistent storage
+      localStorage.removeItem('e_learning_user');
     } else {
-      // Admin: Gunakan localStorage agar tetap login
       localStorage.setItem('e_learning_user', JSON.stringify(u));
       sessionStorage.removeItem('e_learning_user');
     }
@@ -125,46 +163,45 @@ const App: React.FC = () => {
     setView('landing');
   };
 
-  const navigateToLogin = (role: Role) => {
-    setLoginRole(role);
-    setView('login');
-  };
-
-  const navigateToSignup = () => {
-    setView('signup');
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-        <div className="relative">
-          <Loader2 className="w-16 h-16 text-emerald-600 animate-spin mb-4" />
-          <div className="absolute inset-0 bg-emerald-500/10 rounded-full blur-xl animate-pulse"></div>
-        </div>
-        <p className="text-slate-500 font-bold animate-pulse tracking-wide uppercase text-sm">SMP AL Irsyad Surakarta</p>
+        <Loader2 className="w-12 h-12 text-emerald-600 animate-spin mb-4" />
+        <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Memuat Sistem...</p>
       </div>
     );
   }
 
-  const renderView = () => {
-    switch (view) {
-      case 'landing':
-        return <LandingPage onNavigateLogin={navigateToLogin} onNavigateSignup={navigateToSignup} settings={settings} />;
-      case 'login':
-        return <Login role={loginRole || 'STUDENT'} onBack={() => setView('landing')} onLogin={handleLogin} onNavigateSignup={navigateToSignup} />;
-      case 'signup':
-        return <Signup onBack={() => setView('login')} onSignup={() => { setLoginRole('STUDENT'); setView('login'); }} />;
-      case 'dashboard':
-        if (!user) return null;
-        return user.role === 'ADMIN' 
-          ? <AdminDashboard user={user} onLogout={handleLogout} settings={settings} setSettings={setSettings} onUpdateUser={handleUpdateUser} /> 
-          : <StudentDashboard user={user} onLogout={handleLogout} settings={settings} onUpdateUser={handleUpdateUser} />;
-      default:
-        return <LandingPage onNavigateLogin={navigateToLogin} onNavigateSignup={navigateToSignup} settings={settings} />;
-    }
-  };
+  return (
+    <div className="min-h-screen selection:bg-emerald-100 selection:text-emerald-900 relative">
+      {/* Global Sync Indicator */}
+      <div className={`fixed top-4 right-4 z-[9999] flex items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-500 transform ${
+        syncStatus === 'idle' ? 'translate-y-[-100px] opacity-0' : 'translate-y-0 opacity-100'
+      } ${
+        syncStatus === 'syncing' ? 'bg-blue-600 border-blue-400 text-white' : 
+        syncStatus === 'success' ? 'bg-emerald-600 border-emerald-400 text-white' : 
+        'bg-red-600 border-red-400 text-white'
+      }`}>
+        {syncStatus === 'syncing' && <RefreshCw className="animate-spin" size={16} />}
+        {syncStatus === 'success' && <CheckCircle size={16} />}
+        {syncStatus === 'error' && <AlertCircle size={16} />}
+        <span className="text-[10px] font-black uppercase tracking-widest">
+          {syncStatus === 'syncing' ? 'Menyimpan...' : 
+           syncStatus === 'success' ? 'Berhasil Disimpan' : 
+           'Gagal Sinkron'}
+        </span>
+      </div>
 
-  return <div className="min-h-screen selection:bg-emerald-100 selection:text-emerald-900">{renderView()}</div>;
+      {view === 'landing' && <LandingPage onNavigateLogin={(role) => { setLoginRole(role); setView('login'); }} onNavigateSignup={() => setView('signup')} settings={settings} />}
+      {view === 'login' && <Login role={loginRole || 'STUDENT'} onBack={() => setView('landing')} onLogin={handleLogin} onNavigateSignup={() => setView('signup')} />}
+      {view === 'signup' && <Signup onBack={() => setView('login')} onSignup={() => { setLoginRole('STUDENT'); setView('login'); }} />}
+      {view === 'dashboard' && user && (
+        user.role === 'ADMIN' 
+          ? <AdminDashboard user={user} onLogout={handleLogout} settings={settings} setSettings={setSettings} onUpdateUser={handleUpdateUser} /> 
+          : <StudentDashboard user={user} onLogout={handleLogout} settings={settings} onUpdateUser={handleUpdateUser} />
+      )}
+    </div>
+  );
 };
 
 export default App;
