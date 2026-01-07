@@ -98,6 +98,16 @@ const Login: React.FC<LoginProps> = ({ role, onBack, onLogin, onNavigateSignup }
         <div className="relative z-10 text-white max-w-md">
           <h2 className="text-5xl font-extrabold mb-6 leading-tight">Portal {role === 'ADMIN' ? 'Guru' : 'Siswa'}</h2>
           <p className="text-xl opacity-90 font-medium">Masuk untuk memulai aktivitas belajar Informatika hari ini.</p>
+          
+          {/* Foto Ilustrasi yang ditambahkan */}
+          <div className="mt-10 relative group">
+            <div className="absolute -inset-1 bg-white/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+            <img 
+              src="https://images.unsplash.com/photo-1610484826967-09c5720778c7?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+              alt="Informatics Learning Environment" 
+              className="relative rounded-[2rem] shadow-2xl border-4 border-white/20 w-full object-cover aspect-video group-hover:scale-[1.02] transition-transform duration-500"
+            />
+          </div>
         </div>
       </div>
 

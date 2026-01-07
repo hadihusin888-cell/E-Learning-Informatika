@@ -38,15 +38,23 @@ const ManageMaterialsTab: React.FC<ManageMaterialsTabProps> = ({ triggerConfirm,
     setLoading(false);
   };
 
+  // Helper untuk memastikan targetClassIds selalu array
+  const ensureArray = (data: any): string[] => {
+    if (Array.isArray(data)) return data;
+    if (typeof data === 'string') return data.split(',').filter(Boolean);
+    return [];
+  };
+
   const filteredItems = useMemo(() => items.filter(it => {
+    const targetClasses = ensureArray(it.targetClassIds);
     const matchSearch = it.title.toLowerCase().includes(search.toLowerCase()) || 
                         it.description.toLowerCase().includes(search.toLowerCase());
-    const matchClass = !classFilter || it.targetClassIds.includes(classFilter);
+    const matchClass = !classFilter || targetClasses.includes(classFilter);
     return matchSearch && matchClass;
   }), [items, search, classFilter]);
 
   const handleSave = async () => {
-    if (!form.title || !form.content || form.targetClassIds?.length === 0) { 
+    if (!form.title || !form.content || ensureArray(form.targetClassIds).length === 0) { 
       alert("Mohon lengkapi Judul, Konten, dan minimal satu Kelas Target"); 
       return; 
     }
@@ -56,16 +64,18 @@ const ManageMaterialsTab: React.FC<ManageMaterialsTabProps> = ({ triggerConfirm,
     const newItem = { 
       ...form, 
       id: form.id || `mat_${Date.now()}`, 
+      // Simpan sebagai string dipisah koma agar aman di Google Sheets
+      targetClassIds: ensureArray(form.targetClassIds).join(','),
       createdAt: form.createdAt || new Date().toLocaleString('id-ID', {
         day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
       }) 
-    } as Material;
+    } as any;
 
     try {
       const updated = isNew ? [newItem, ...items] : items.map(it => it.id === form.id ? newItem : it);
       await db.saveAll('elearning_materi_list', updated);
       setItems(updated);
-      if (isNew) notifyStudents(newItem.targetClassIds, "Materi Baru!", newItem.title, "material");
+      if (isNew) notifyStudents(ensureArray(newItem.targetClassIds), "Materi Baru!", newItem.title, "material");
       setShowModal(false);
     } catch (err) {
       alert("Gagal menyimpan materi.");
@@ -87,7 +97,8 @@ const ManageMaterialsTab: React.FC<ManageMaterialsTabProps> = ({ triggerConfirm,
   };
 
   const toggleAllClasses = () => {
-    if (form.targetClassIds?.length === classes.length) {
+    const current = ensureArray(form.targetClassIds);
+    if (current.length === classes.length) {
       setForm({ ...form, targetClassIds: [] });
     } else {
       setForm({ ...form, targetClassIds: classes.map(c => c.name) });
@@ -160,7 +171,7 @@ const ManageMaterialsTab: React.FC<ManageMaterialsTabProps> = ({ triggerConfirm,
         {filteredItems.map(it => (
           <div key={it.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col group relative overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
              <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
-                <button onClick={() => { setForm(it); setShowModal(true); }} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Edit size={14}/></button>
+                <button onClick={() => { setForm({...it, targetClassIds: ensureArray(it.targetClassIds)}); setShowModal(true); }} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Edit size={14}/></button>
                 <button onClick={() => handleDelete(it.id, it.title)} className="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"><Trash2 size={14}/></button>
              </div>
              
@@ -177,12 +188,15 @@ const ManageMaterialsTab: React.FC<ManageMaterialsTabProps> = ({ triggerConfirm,
              <h4 className="font-black text-slate-800 text-sm leading-tight mb-2 group-hover:text-emerald-600 transition-colors line-clamp-1">{it.title}</h4>
              <p className="text-[11px] text-slate-500 font-medium line-clamp-2 leading-relaxed mb-6">{it.description || 'Materi pembelajaran informatika.'}</p>
              
-             <div className="mt-auto flex flex-wrap gap-1.5">
-                {it.targetClassIds.map(cls => (
-                  <span key={cls} className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-md text-[8px] font-black uppercase border border-emerald-100">
-                    {cls}
-                  </span>
-                ))}
+             <div className="mt-auto space-y-2">
+                <p className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">Target Kelas:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {ensureArray(it.targetClassIds).map(cls => (
+                    <span key={cls} className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-md text-[8px] font-black uppercase border border-emerald-100">
+                      Kelas {cls}
+                    </span>
+                  ))}
+                </div>
              </div>
           </div>
         ))}
@@ -302,19 +316,19 @@ const ManageMaterialsTab: React.FC<ManageMaterialsTabProps> = ({ triggerConfirm,
                     onClick={toggleAllClasses} 
                     className="text-[9px] font-black text-emerald-600 bg-white px-3 py-1.5 rounded-full border border-emerald-100 hover:bg-emerald-50 transition-colors"
                   >
-                    {form.targetClassIds?.length === classes.length ? 'Batal Semua' : 'Pilih Semua Kelas'}
+                    {ensureArray(form.targetClassIds).length === classes.length ? 'Batal Semua' : 'Pilih Semua Kelas'}
                   </button>
                 </div>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {classes.map(c => {
-                    const isActive = form.targetClassIds?.includes(c.name);
+                    const isActive = ensureArray(form.targetClassIds).includes(c.name);
                     return (
                       <button 
                         key={c.id} 
                         type="button" 
                         onClick={() => {
-                          const current = form.targetClassIds || [];
+                          const current = ensureArray(form.targetClassIds);
                           setForm({...form, targetClassIds: isActive ? current.filter(x => x !== c.name) : [...current, c.name]});
                         }} 
                         className={`group p-3 rounded-2xl text-[10px] font-black transition-all border-2 flex items-center justify-between ${

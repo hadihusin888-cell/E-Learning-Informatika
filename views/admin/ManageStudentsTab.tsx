@@ -87,11 +87,18 @@ const ManageStudentsTab: React.FC<ManageStudentsTabProps> = ({ triggerConfirm, c
   const handleDelete = (id: string, name: string) => {
     triggerConfirm(
       `Hapus Siswa ${name}?`, 
-      "Data akademik dan akses siswa ini akan dihapus secara permanen.", 
+      "Data akademik, akses siswa, dan seluruh riwayat notifikasi mereka akan dihapus secara permanen dari sistem cloud.", 
       async () => {
         const updated = students.filter(s => s.id !== id);
+        
+        // 1. Update daftar siswa utama
         await db.saveAll('elearning_students_list', updated);
         setStudents(updated);
+        
+        // 2. Bersihkan sheet notifikasi milik siswa tersebut secara otomatis
+        await db.deleteKey(`elearning_notifs_${id}`);
+        
+        console.log(`Cleaned up data for user: ${id}`);
       }
     );
   };
@@ -203,7 +210,7 @@ const ManageStudentsTab: React.FC<ManageStudentsTabProps> = ({ triggerConfirm, c
         )}
       </div>
 
-      {/* Updated Modal Profile - More consistent with other admin forms */}
+      {/* Modal Profile */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 md:p-6 overflow-hidden">
           <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-[0_35px_80px_-15px_rgba(0,0,0,0.3)] animate-in zoom-in-95 duration-300 relative flex flex-col max-h-[90vh]">

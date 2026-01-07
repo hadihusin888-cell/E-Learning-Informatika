@@ -7,9 +7,10 @@ import { db } from '../App';
 interface SignupProps {
   onBack: () => void;
   onSignup: () => void;
+  logoUrl: string;
 }
 
-const Signup: React.FC<SignupProps> = ({ onBack, onSignup }) => {
+const Signup: React.FC<SignupProps> = ({ onBack, onSignup, logoUrl }) => {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -78,7 +79,13 @@ const Signup: React.FC<SignupProps> = ({ onBack, onSignup }) => {
       <div className="w-full max-w-xl bg-white p-8 md:p-12 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
         {loading && <div className="absolute inset-0 bg-white/70 z-20 flex flex-col items-center justify-center text-black"><Loader2 className="animate-spin text-emerald-600 mb-2" size={40} /><p className="font-bold text-slate-600">Mengirim Data...</p></div>}
         <button onClick={onBack} className="flex items-center gap-2 text-slate-500 mb-8"><ArrowLeft size={18} /> Kembali</button>
-        <div className="text-center mb-10 text-black"><div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4"><GraduationCap size={32} /></div><h3 className="text-3xl font-bold text-slate-900 mb-2">Daftar Akun Siswa</h3></div>
+        
+        <div className="text-center mb-10 text-black">
+          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner p-2 border border-slate-50">
+            <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+          </div>
+          <h3 className="text-3xl font-bold text-slate-900 mb-2">Daftar Akun Siswa</h3>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 text-black">
           {step === 1 ? (

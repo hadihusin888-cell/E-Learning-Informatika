@@ -54,8 +54,15 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, set
     await db.saveAll(`elearning_notifs_${user.id}`, updated);
   };
 
-  const studentMaterials = useMemo(() => materials.filter(m => m.targetClassIds.includes(user.classId)), [materials, user.classId]);
-  const studentTasks = useMemo(() => tasks.filter(t => t.targetClassIds.includes(user.classId)), [tasks, user.classId]);
+  // Helper untuk memastikan targetClassIds selalu array
+  const ensureArray = (data: any): string[] => {
+    if (Array.isArray(data)) return data;
+    if (typeof data === 'string') return data.split(',').filter(Boolean);
+    return [];
+  };
+
+  const studentMaterials = useMemo(() => materials.filter(m => ensureArray(m.targetClassIds).includes(user.classId || '')), [materials, user.classId]);
+  const studentTasks = useMemo(() => tasks.filter(t => ensureArray(t.targetClassIds).includes(user.classId || '')), [tasks, user.classId]);
   const studentSubmissions = useMemo(() => submissions.filter(s => s.studentId === user.id), [submissions, user.id]);
 
   const renderContent = () => {

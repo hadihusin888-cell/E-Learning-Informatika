@@ -9,7 +9,7 @@ import { User, Role, SiteSettings, ClassRoom } from './types.ts';
 import { Loader2, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 
 // GANTI URL INI DENGAN URL DEPLOY BARU ANDA
-export const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyWHzmyMRZfUJdFZB0cKA-z-gXqeZOb2djiwbTpyUIky6WRJ_r_24WVBK2pZ4rFRM4Izw/exec"; 
+export const GAS_API_URL = "https://script.google.com/macros/s/AKfycbw4mrCZOw_PJtjMkAC7cMhYXVcQaJ2COXEhjdnx9W66woPdYWxuRlO-hOj92RQMWx2kvg/exec"; 
 
 const isConfigured = !GAS_API_URL.includes("XXXXXXXXXXXX");
 
@@ -57,6 +57,22 @@ export const db = {
       await fetch(GAS_API_URL, {
         method: "POST",
         body: JSON.stringify({ action: 'APPEND_ROW', key, value })
+      });
+      window.dispatchEvent(new CustomEvent('sync-end'));
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('sync-error'));
+    }
+  },
+
+  deleteKey: async (key: string) => {
+    localStorage.removeItem(key);
+    if (!isConfigured) return;
+    
+    window.dispatchEvent(new CustomEvent('sync-start'));
+    try {
+      await fetch(GAS_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: 'DELETE_SHEET', key })
       });
       window.dispatchEvent(new CustomEvent('sync-end'));
     } catch (err) {
@@ -197,7 +213,7 @@ const App: React.FC = () => {
 
       {view === 'landing' && <LandingPage onNavigateLogin={(role) => { setLoginRole(role); setView('login'); }} onNavigateSignup={() => setView('signup')} settings={settings} />}
       {view === 'login' && <Login role={loginRole || 'STUDENT'} onBack={() => setView('landing')} onLogin={handleLogin} onNavigateSignup={() => setView('signup')} />}
-      {view === 'signup' && <Signup onBack={() => setView('login')} onSignup={() => { setLoginRole('STUDENT'); setView('login'); }} />}
+      {view === 'signup' && <Signup onBack={() => setView('login')} onSignup={() => { setLoginRole('STUDENT'); setView('login'); }} logoUrl={settings.logoUrl} />}
       {view === 'dashboard' && user && (
         user.role === 'ADMIN' 
           ? <AdminDashboard user={user} onLogout={handleLogout} settings={settings} setSettings={setSettings} onUpdateUser={handleUpdateUser} /> 
