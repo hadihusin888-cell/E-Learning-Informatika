@@ -4,7 +4,8 @@ import {
   Loader2, UserPlus2, Search, SlidersHorizontal, Edit, 
   Trash2, UserCog, X, User as UserIcon, Save, SearchX, 
   School, Fingerprint, Lock, Eye, EyeOff, Info, Camera,
-  CheckCircle2, AlertCircle, Hash, RefreshCw, ChevronRight, UserCircle, KeyRound
+  CheckCircle2, AlertCircle, Hash, RefreshCw, ChevronRight, UserCircle, KeyRound,
+  Zap, UserCheck, ShieldCheck
 } from 'lucide-react';
 import { db } from '../../App.tsx';
 import { User, ClassRoom } from '../../types.ts';
@@ -165,7 +166,6 @@ const ManageStudentsTab: React.FC<ManageStudentsTabProps> = ({ triggerConfirm, c
             <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
               <button onClick={() => handleQuickReset(s)} className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition-all shadow-sm"><KeyRound size={12}/></button>
               <button onClick={() => { setForm(s); setShowModal(true); }} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Edit size={12}/></button>
-              {/* Fix: Changed Trash to Trash2 */}
               <button onClick={() => handleDelete(s.id, s.name)} className="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm"><Trash2 size={12}/></button>
             </div>
             
@@ -203,46 +203,155 @@ const ManageStudentsTab: React.FC<ManageStudentsTabProps> = ({ triggerConfirm, c
         )}
       </div>
 
-      {/* Modal Profile - Standard size for editing */}
+      {/* Updated Modal Profile - More consistent with other admin forms */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] flex items-center justify-center p-6 overflow-y-auto">
-          <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-300 relative my-auto overflow-hidden">
-            <div className="p-8 border-b border-slate-50 flex items-center justify-between">
-               <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 md:p-6 overflow-hidden">
+          <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-[0_35px_80px_-15px_rgba(0,0,0,0.3)] animate-in zoom-in-95 duration-300 relative flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="p-6 md:p-8 border-b border-slate-50 flex items-center justify-between bg-white z-10">
+               <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 bg-blue-600 text-white rounded-[1.2rem] flex items-center justify-center shadow-lg shadow-blue-200">
                     <UserCog size={24} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-800">{form.id ? 'Edit Siswa' : 'Tambah Siswa'}</h3>
-                    <p className="text-slate-400 font-medium text-[10px] uppercase">Detail identitas siswa</p>
+                    <h3 className="text-2xl font-black text-slate-800 leading-none">{form.id ? 'Edit Profil Siswa' : 'Registrasi Siswa'}</h3>
+                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">Kelola identitas & akses akademik</p>
                   </div>
                </div>
-               <button onClick={() => setShowModal(false)} className="p-2 bg-slate-50 text-slate-400 rounded-lg"><X size={20} /></button>
+               <button onClick={() => setShowModal(false)} className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-rose-50 hover:text-rose-500 transition-all active:scale-90">
+                  <X size={24} />
+               </button>
             </div>
 
-            <div className="p-8 space-y-6">
-              <div className="flex flex-col items-center mb-4">
-                <div className="relative">
-                  <img src={form.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${form.username || 'default'}`} className="w-24 h-24 rounded-full border-4 border-white shadow-xl bg-slate-50" alt="Preview" />
-                  <button type="button" onClick={refreshAvatar} className="absolute bottom-0 right-0 p-2 bg-blue-600 text-white rounded-full border-2 border-white"><RefreshCw size={12} /></button>
+            {/* Modal Content - Scrollable Area */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 scrollbar-hide">
+              
+              {/* Part 1: Avatar Preview */}
+              <div className="flex flex-col items-center py-6 bg-slate-50 rounded-[2.5rem] border border-slate-100 shadow-inner">
+                <div className="relative group">
+                  <div className="absolute -inset-2 bg-blue-500/20 rounded-full blur group-hover:bg-blue-500/30 transition-all"></div>
+                  <img 
+                    src={form.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${form.username || 'default'}`} 
+                    className="w-28 h-28 rounded-full border-4 border-white shadow-xl bg-white relative" 
+                    alt="Preview" 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={refreshAvatar} 
+                    className="absolute bottom-0 right-0 p-3 bg-blue-600 text-white rounded-2xl border-4 border-white shadow-lg hover:rotate-180 transition-all duration-500 active:scale-90"
+                    title="Acak Avatar"
+                  >
+                    <RefreshCw size={16} />
+                  </button>
+                </div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-6">Pratinjau Identitas Visual</p>
+              </div>
+
+              {/* Part 2: Personal Information */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-2 text-blue-600 px-1">
+                  <UserCircle size={16} />
+                  <h4 className="text-[10px] font-black uppercase tracking-widest">Informasi Personal</h4>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nama Lengkap Siswa</label>
+                  <div className="relative group">
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={18} />
+                    <input 
+                      value={form.name} 
+                      onChange={e => setForm({...form, name: e.target.value})} 
+                      placeholder="Contoh: Muhammad Akhyar"
+                      className="w-full p-4 pl-12 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 transition-all" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Penempatan Kelas</label>
+                  <div className="relative group">
+                    <School className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={18} />
+                    <select 
+                      value={form.classId} 
+                      onChange={e => setForm({...form, classId: e.target.value})} 
+                      className="w-full p-4 pl-12 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-sm outline-none focus:border-blue-500/50 appearance-none cursor-pointer transition-all"
+                    >
+                      <option value="">Pilih Kelas</option>
+                      {classes.map(c => <option key={c.id} value={c.name}>Kelas {c.name}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-4">
-                <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Nama Lengkap..." className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-sm outline-none" />
-                <div className="grid grid-cols-2 gap-4">
-                  <input value={form.username} onChange={e => setForm({...form, username: e.target.value})} placeholder="Username" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-sm outline-none" />
-                  <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Password" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-bold text-sm outline-none" />
+
+              {/* Part 3: Account Credentials */}
+              <div className="space-y-6 p-6 bg-slate-900 rounded-[2.5rem] text-white">
+                <div className="flex items-center gap-2 text-blue-400">
+                  <Fingerprint size={16} />
+                  <h4 className="text-[10px] font-black uppercase tracking-widest">Kredensial Akun</h4>
                 </div>
-                <select value={form.classId} onChange={e => setForm({...form, classId: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl font-black text-sm outline-none">
-                  <option value="">Pilih Kelas</option>
-                  {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Username Login</label>
+                    <div className="relative">
+                      <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                      <input 
+                        value={form.username} 
+                        onChange={e => setForm({...form, username: e.target.value.toLowerCase().replace(/\s/g, '')})} 
+                        placeholder="username_siswa"
+                        className="w-full p-4 pl-12 bg-white/5 border-2 border-white/10 rounded-2xl font-bold text-sm outline-none focus:border-blue-500 transition-all text-white" 
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                      <input 
+                        type={showPassword ? 'text' : 'password'} 
+                        value={form.password} 
+                        onChange={e => setForm({...form, password: e.target.value})} 
+                        placeholder="••••••••"
+                        className="w-full p-4 pl-12 pr-12 bg-white/5 border-2 border-white/10 rounded-2xl font-bold text-sm outline-none focus:border-blue-500 transition-all text-white" 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowPassword(!showPassword)} 
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                    Siswa akan menggunakan username dan password ini untuk masuk ke portal pembelajaran. Disarankan menggunakan NIS atau Nama Panggilan.
+                  </p>
+                </div>
               </div>
+
             </div>
 
-            <div className="p-8 border-t border-slate-50 flex gap-3">
-              <button onClick={() => setShowModal(false)} className="flex-1 py-3 bg-slate-50 text-slate-400 rounded-xl font-black text-xs uppercase">Batal</button>
-              <button onClick={handleSave} className="flex-[2] py-3 bg-slate-900 text-white rounded-xl font-black text-xs uppercase hover:bg-blue-600">Simpan Siswa</button>
+            {/* Modal Footer */}
+            <div className="p-8 border-t border-slate-50 flex flex-col md:flex-row gap-4 bg-white rounded-b-[3rem]">
+              <button 
+                onClick={() => setShowModal(false)} 
+                className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.1em] hover:bg-slate-100 transition-all active:scale-95"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={handleSave} 
+                className="flex-[2] py-4 bg-slate-900 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-blue-600 shadow-2xl shadow-slate-200 transition-all flex items-center justify-center gap-3 active:scale-95"
+              >
+                <Save size={18} />
+                {form.id ? 'Simpan Perubahan' : 'Daftarkan Siswa'}
+              </button>
             </div>
           </div>
         </div>

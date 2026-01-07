@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   LogOut, User as UserIcon, Bell, X, Check, 
   Info, BookOpen, ClipboardList, CheckCircle, 
@@ -44,7 +44,15 @@ const Layout: React.FC<LayoutProps> = ({
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const unreadCount = notifications.filter(n => !n.read).length;
+  
+  // Mengurutkan notifikasi: Yang terbaru (ID lebih besar/timestamp lebih baru) di paling atas
+  const sortedNotifications = useMemo(() => {
+    return [...notifications].sort((a, b) => b.id.localeCompare(a.id));
+  }, [notifications]);
+
+  const unreadCount = useMemo(() => {
+    return notifications.filter(n => !n.read).length;
+  }, [notifications]);
   
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -140,42 +148,63 @@ const Layout: React.FC<LayoutProps> = ({
               {showNotifications && (
                 <div className="absolute right-0 mt-3 w-80 md:w-96 bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
                   <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-                    <h4 className="font-black text-slate-800">Notifikasi Terbaru</h4>
+                    <div>
+                      <h4 className="font-black text-slate-800">Notifikasi</h4>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mt-0.5">Kamu punya {unreadCount} pesan baru</p>
+                    </div>
                     {unreadCount > 0 && (
                       <button 
-                        onClick={onMarkAllAsRead}
-                        className="text-[10px] font-black text-emerald-600 uppercase hover:underline"
+                        onClick={() => {
+                          onMarkAllAsRead?.();
+                          setShowNotifications(false);
+                        }}
+                        className="text-[10px] font-black text-emerald-600 uppercase hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors"
                       >
-                        Tandai Semua Dibaca
+                        Tandai Semua
                       </button>
                     )}
                   </div>
-                  <div className="max-h-[400px] overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="py-12 text-center">
-                        <Bell className="mx-auto text-slate-100 mb-4" size={48} />
+                  <div className="max-h-[400px] overflow-y-auto scrollbar-hide">
+                    {sortedNotifications.length === 0 ? (
+                      <div className="py-16 text-center">
+                        <div className="w-16 h-16 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                           <Bell size={32} />
+                        </div>
                         <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Belum ada notifikasi</p>
                       </div>
                     ) : (
-                      notifications.map((notif) => (
+                      sortedNotifications.map((notif) => (
                         <div 
                           key={notif.id} 
-                          onClick={() => onMarkAsRead?.(notif.id)}
-                          className={`p-5 flex gap-4 cursor-pointer transition-colors border-b border-slate-50 last:border-0 ${!notif.read ? 'bg-emerald-50/30' : 'hover:bg-slate-50'}`}
+                          onClick={() => {
+                            onMarkAsRead?.(notif.id);
+                            // Jika notif diklik, tutup dropdown untuk pengalaman UX yang lebih baik
+                            if (!notif.read) setShowNotifications(false);
+                          }}
+                          className={`p-5 flex gap-4 cursor-pointer transition-colors border-b border-slate-50 last:border-0 ${!notif.read ? 'bg-emerald-50/40 hover:bg-emerald-50/60' : 'hover:bg-slate-50'}`}
                         >
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${!notif.read ? 'bg-white shadow-sm' : 'bg-slate-50'}`}>
+                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${!notif.read ? 'bg-white shadow-sm' : 'bg-slate-50'}`}>
                             {getIcon(notif.type)}
                           </div>
-                          <div className="flex-1">
-                            <p className={`text-xs ${!notif.read ? 'font-black text-slate-800' : 'font-semibold text-slate-600'}`}>{notif.title}</p>
-                            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">{notif.message}</p>
-                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest mt-2">{notif.createdAt}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className={`text-xs truncate ${!notif.read ? 'font-black text-slate-800' : 'font-semibold text-slate-600'}`}>{notif.title}</p>
+                              <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest shrink-0 mt-0.5">{notif.createdAt.split(',')[0]}</p>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{notif.message}</p>
                           </div>
-                          {!notif.read && <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 shrink-0"></div>}
+                          {!notif.read && (
+                            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full mt-2 shrink-0 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                          )}
                         </div>
                       ))
                     )}
                   </div>
+                  {sortedNotifications.length > 0 && (
+                    <div className="p-4 bg-slate-50 text-center border-t border-slate-100">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tarik ke bawah untuk memuat lebih banyak</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

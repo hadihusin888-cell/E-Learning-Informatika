@@ -93,10 +93,11 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ materials }) => {
       <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5">
         {filteredMaterials.map((m: any) => {
           const style = getTypeStyle(m.type);
+          const Icon = style.icon;
           return (
             <div key={m.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col overflow-hidden">
               <div className={`h-24 ${style.bg} relative flex items-center justify-center`}>
-                <style.icon size={32} className={`${style.text} opacity-20 group-hover:scale-110 transition-transform`} />
+                <Icon size={32} className={`${style.text} opacity-20 group-hover:scale-110 transition-transform`} />
               </div>
               <div className="p-6 flex-1 flex flex-col">
                 <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 ${style.bg} ${style.text} rounded-md w-fit mb-3`}>
@@ -117,68 +118,72 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ materials }) => {
       </section>
 
       {/* Embed Modal for Materials */}
-      {selectedMaterial && (
-        <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-6xl h-full md:max-h-[90vh] rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl flex flex-col overflow-hidden">
-            
-            {/* Header */}
-            <div className="p-6 md:px-10 border-b border-slate-50 flex items-center justify-between bg-white shrink-0">
-               <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${getTypeStyle(selectedMaterial.type).bg} ${getTypeStyle(selectedMaterial.type).text} shadow-inner`}>
-                    {getTypeStyle(selectedMaterial.type).icon({ size: 24 })}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-slate-800 leading-none">{selectedMaterial.title}</h3>
-                    <p className="text-slate-400 font-bold text-[9px] uppercase tracking-widest mt-2">Pusat Belajar Informatika</p>
-                  </div>
-               </div>
-               <button onClick={() => setSelectedMaterial(null)} className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-rose-50 hover:text-rose-500 transition-all">
-                  <X size={24} />
-               </button>
-            </div>
-
-            {/* Content Area with Auto-Embed */}
-            <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-              {/* Sidebar Info (Mobile hidden or top) */}
-              <div className="lg:w-80 bg-slate-50/50 p-8 border-r border-slate-50 overflow-y-auto hidden lg:block">
-                 <div className="space-y-8">
-                    <div className="space-y-3">
-                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Zap size={14} className="text-amber-500" /> Ringkasan Materi</h4>
-                       <p className="text-[11px] text-slate-600 font-medium leading-relaxed italic">"{selectedMaterial.description}"</p>
+      {selectedMaterial && (() => {
+        const style = getTypeStyle(selectedMaterial.type);
+        const Icon = style.icon;
+        return (
+          <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+            <div className="bg-white w-full max-w-6xl h-full md:max-h-[90vh] rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl flex flex-col overflow-hidden">
+              
+              {/* Header */}
+              <div className="p-6 md:px-10 border-b border-slate-50 flex items-center justify-between bg-white shrink-0">
+                 <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${style.bg} ${style.text} shadow-inner`}>
+                      <Icon size={24} />
                     </div>
-                    <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                       <h5 className="text-[9px] font-black text-slate-400 uppercase mb-3">Tindakan Cepat</h5>
-                       <a href={selectedMaterial.content} target="_blank" rel="noreferrer" className="w-full py-3 bg-slate-900 text-white rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-600 transition-all">
-                          Buka di Tab Baru <ArrowUpRight size={14} />
-                       </a>
+                    <div>
+                      <h3 className="text-xl font-black text-slate-800 leading-none">{selectedMaterial.title}</h3>
+                      <p className="text-slate-400 font-bold text-[9px] uppercase tracking-widest mt-2">Pusat Belajar Informatika</p>
                     </div>
                  </div>
+                 <button onClick={() => setSelectedMaterial(null)} className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-rose-50 hover:text-rose-500 transition-all">
+                    <X size={24} />
+                 </button>
               </div>
 
-              {/* Main Viewer */}
-              <div className="flex-1 bg-slate-100 relative p-4 md:p-8 flex flex-col">
-                 <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl mb-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                       <Info size={16} className="text-amber-500 shrink-0" />
-                       <p className="text-[10px] font-bold text-amber-700 leading-tight">Konten tidak muncul? Klik tombol "Buka di Tab Baru" di samping.</p>
-                    </div>
-                    <a href={selectedMaterial.content} target="_blank" rel="noreferrer" className="md:hidden shrink-0 px-4 py-2 bg-amber-500 text-white rounded-lg text-[9px] font-black uppercase">Buka Link</a>
-                 </div>
+              {/* Content Area with Auto-Embed */}
+              <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+                {/* Sidebar Info (Mobile hidden or top) */}
+                <div className="lg:w-80 bg-slate-50/50 p-8 border-r border-slate-50 overflow-y-auto hidden lg:block">
+                   <div className="space-y-8">
+                      <div className="space-y-3">
+                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Zap size={14} className="text-amber-500" /> Ringkasan Materi</h4>
+                         <p className="text-[11px] text-slate-600 font-medium leading-relaxed italic">"{selectedMaterial.description}"</p>
+                      </div>
+                      <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                         <h5 className="text-[9px] font-black text-slate-400 uppercase mb-3">Tindakan Cepat</h5>
+                         <a href={selectedMaterial.content} target="_blank" rel="noreferrer" className="w-full py-3 bg-slate-900 text-white rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-600 transition-all">
+                            Buka di Tab Baru <ArrowUpRight size={14} />
+                         </a>
+                      </div>
+                   </div>
+                </div>
 
-                 <div className="flex-1 w-full bg-white rounded-[2rem] shadow-xl overflow-hidden border-4 border-white">
-                    <iframe 
-                      src={getEmbedUrl(selectedMaterial.content)} 
-                      className="w-full h-full border-0" 
-                      allowFullScreen 
-                      title="Material Content"
-                      loading="lazy"
-                    ></iframe>
-                 </div>
+                {/* Main Viewer */}
+                <div className="flex-1 bg-slate-100 relative p-4 md:p-8 flex flex-col">
+                   <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl mb-4 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                         <Info size={16} className="text-amber-500 shrink-0" />
+                         <p className="text-[10px] font-bold text-amber-700 leading-tight">Konten tidak muncul? Klik tombol "Buka di Tab Baru" di samping.</p>
+                      </div>
+                      <a href={selectedMaterial.content} target="_blank" rel="noreferrer" className="md:hidden shrink-0 px-4 py-2 bg-amber-500 text-white rounded-lg text-[9px] font-black uppercase">Buka Link</a>
+                   </div>
+
+                   <div className="flex-1 w-full bg-white rounded-[2rem] shadow-xl overflow-hidden border-4 border-white">
+                      <iframe 
+                        src={getEmbedUrl(selectedMaterial.content)} 
+                        className="w-full h-full border-0" 
+                        allowFullScreen 
+                        title="Material Content"
+                        loading="lazy"
+                      ></iframe>
+                   </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
